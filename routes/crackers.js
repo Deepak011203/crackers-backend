@@ -2,9 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Cracker = require('../models/Cracker');
 const { auth, adminAuth } = require('../middleware/auth');
-const upload = require('../config/multer');
 
-// Get all crackers
 router.get('/', async (req, res) => {
   try {
     const { category, search } = req.query;
@@ -31,7 +29,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get single cracker
 router.get('/:id', async (req, res) => {
   try {
     const cracker = await Cracker.findById(req.params.id).populate('createdBy', 'name');
@@ -49,17 +46,16 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create cracker (Admin only)
-router.post('/', adminAuth, upload.single('image'), async (req, res) => {
+router.post('/', adminAuth, async (req, res) => {
   try {
-    const { name, description, price, category, stock } = req.body;
+    const { name, description, price, category, stock, image } = req.body;
 
     const cracker = new Cracker({
       name,
       description,
       price,
       category,
-      image: req.file ? `/uploads/${req.file.filename}` : req.body.image,
+      image,
       stock,
       createdBy: req.user.id,
     });
@@ -75,10 +71,9 @@ router.post('/', adminAuth, upload.single('image'), async (req, res) => {
   }
 });
 
-// Update cracker (Admin only)
-router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
+router.put('/:id', adminAuth, async (req, res) => {
   try {
-    const { name, description, price, category, stock } = req.body;
+    const { name, description, price, category, stock, image } = req.body;
 
     let cracker = await Cracker.findById(req.params.id);
 
@@ -94,10 +89,8 @@ router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
       stock,
     };
 
-    if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
-    } else if (req.body.image) {
-      updateData.image = req.body.image;
+    if (image) {
+      updateData.image = image;
     }
 
     cracker = await Cracker.findByIdAndUpdate(
@@ -115,7 +108,6 @@ router.put('/:id', adminAuth, upload.single('image'), async (req, res) => {
   }
 });
 
-// Delete cracker (Admin only)
 router.delete('/:id', adminAuth, async (req, res) => {
   try {
     const cracker = await Cracker.findByIdAndDelete(req.params.id);
